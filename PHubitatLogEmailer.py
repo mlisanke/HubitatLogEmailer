@@ -91,28 +91,43 @@ def main():
 
     print(pt,t)
 
-    list = []
+    elist = []
+    eapp1 = []
+    eintrusion = None
     ct = datetime.now()
     offset = datetime.fromtimestamp(ct.timestamp()) - datetime.utcfromtimestamp(ct.timestamp())
     for e in r.content[2:-2].decode("utf-8").split('","'):
-        date,level,content = e.split('\\t')
+        edt,level,content = e.split('\\t')
+        edate, etime = edt.split()
+        ehour,emin,esec = etime.split(":")
         etype,eid,ename,etext = content.split('|')
-        ut = datetime.strptime(date+"000","%Y-%m-%d %H:%M:%S.%f")
+        ut = datetime.strptime(edt+"000","%Y-%m-%d %H:%M:%S.%f")
         lt = ut+offset
         if lt > pt:
             date = lt.strftime("%Y-%m-%d %H:%M:%S.%f")
-            list.append([date,level,etype,eid,ename,etext])
-#    print(list)
+            elist.append([date,level,etype,eid,ename,etext])
+            if etype == 'app' and eid == '1':
+                eapp1.append(lt.strftime("%m/%d %H:%M ")+etext)
+                if "Intrusion" in etext:
+                    eintrusion = etext
+#    print(apps,elist)
 
+    mtext = ""
     with open("hubitat.txt","w") as outfile:
-        for e in list:
+        for aline in eapp1:
+            print(aline)
+            outfile.write(aline+"\n")
+            mtext += aline+"\n"
+        outfile.write("\n")
+        mtext += "\nAttached Hubitat Past Log File\n"
+        for e in elist:
             date,level,etype,eid,ename,etext = e
             etext=etext.replace("\\u00b0"," deg.")
             oline = "{0} {1} {2} {3}\t{4} -\t{5}".format(date,level,etype,eid,ename,etext)
             print(oline)
             outfile.write(oline+"\n")
 
-    lt = datetime.strptime(list[-1][0],"%Y-%m-%d %H:%M:%S.%f")
+    lt = datetime.strptime(elist[-1][0],"%Y-%m-%d %H:%M:%S.%f")
     print(lt)
 
     with open(".hubitat-logtime","w") as outfile:
@@ -122,9 +137,12 @@ def main():
     toaddr  = 'mike.lisanke+RPiTV@gmail.com'
     cc = ['mike.lisanke+rpicc1@gmail.com','mike.lisanke+rpicc2@gmail.com']
     bcc = ['mike.lisanke+rpibcc1@gmail.com']
-    subject = "Hubitat Past Logs at "+lt.strftime("%c")
+    if eintrusion:
+        subject = "Hubitat Past Logs at "+eintrusion
+    else:
+        subject = "Hubitat Past Logs at "+lt.strftime("%c")
 
-    send_mail(fromaddr,[toaddr],subject,"Attached Hubitat Past Log File",files=["hubitat.txt"],send_cc=cc,send_bcc=bcc,user=username,passwd=password)
+    send_mail(fromaddr,[toaddr],subject,mtext,files=["hubitat.txt"],send_cc=cc,send_bcc=bcc,user=username,passwd=password)
 
 if __name__=="__main__":
         main()
