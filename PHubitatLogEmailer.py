@@ -128,14 +128,15 @@ def main():
 'Contact Sensor 1':'Family room door contact',
 'Contact Sensor 2':'Living room door contact',
 'Garage Door Tilt Sensor':'Garage Door Tilt Sensor',
-'IR Motion 1':'Family room near Inside Door motion',
+'IR Motion 1':'Family room - Inside Door motion',
 'IR Motion 2':'Garage door (defunked) motion',
-'IR Motion 3':'Living room near Front door motion',
-'IR Motion 4':'Living room near North window motion',
+'IR Motion 3':'Living room - Front door motion',
+'IR Motion 4':'Living room - North window motion',
 'IR Motion 5':'Kitchen near cupboard (defunked) motion',
-'IR Motion 6':'Family room at Stairs motion',
+'IR Motion 6':'Family room - Stairs motion',
 'IR Motion 7':'Garage door motion',
-'IR Motion 8':'Kitchen near Cupboard motion',
+'IR Motion 8':'Kitchen - Cupboard motion',
+'IR Motion 9':'2nd Floor - Hallway near Den',
 'Key Fob 1':'backup fob',
 'Key Fob 2':'primary fob',
 'Outlet 1':'Living room near North window outlet',
@@ -186,12 +187,16 @@ def main():
                     enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is inactive ('+etext+')')
                 elif ename.find('Key Fob') != -1:
                     enote.append(lt.strftime("%m/%d %H:%M ")+'('+etext+')')
-                elif etext.find('temperature is') != -1:
-                    if chklutime(ename,lt,300):
-                        enote.append(lt.strftime("%m/%d %H:%M ")+etext.replace("\\u00b0"," deg."))
-                elif etext.find('battery is') != -1:
-                    if chklutime(ename,lt,300):
-                        enote.append(lt.strftime("%m/%d %H:%M ")+etext)    
+                else:
+                    tpos = etext.find(' temperature is')
+                    if tpos != -1:
+                        if chklutime(ename,lt,300):
+                            enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[tpos:].replace("\\u00b0"," deg."))
+                    else:
+                        bpos = etext.find(' battery is') 
+                        if bpos != -1:
+                            if chklutime(ename,lt,300):
+                                enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[bpos:])    
 #    print(note,elist)
 
     mtext = ""
