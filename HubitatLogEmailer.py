@@ -181,15 +181,15 @@ def main():
     enote = []
     eintrusion = None
     ct = datetime.now()
-    offset = datetime.fromtimestamp(ct.timestamp()) - datetime.utcfromtimestamp(ct.timestamp())
+#    offset = datetime.fromtimestamp(ct.timestamp()) - datetime.utcfromtimestamp(ct.timestamp())
     for e in r.content[2:-2].decode("utf-8").split('","'):
         edt,level,content = e.split('\\t')
         edate, etime = edt.split()
         ehour,emin,esec = etime.split(":")
         etype,eid,ename,etext = content.split('|')
         edt = edt.lstrip("\\u0000")
-        ut = datetime.strptime(edt+"000","%Y-%m-%d %H:%M:%S.%f")
-        lt = ut+offset
+        lt = datetime.strptime(edt+"000","%Y-%m-%d %H:%M:%S.%f")
+#        lt = ut+offset
         if lt > pt:
             date = lt.strftime("%Y-%m-%d %H:%M:%S.%f")
             elist.append([date,level,etype,eid,ename,etext])
