@@ -172,7 +172,7 @@ def main():
 'Motion Light Temp Humidity 2':'Back porch motion',
 'Smart Power 29EE' : 'Repeater/Outlet Upstairs Hallway',
 'Smart Power 5892' : 'Repeater/Outlet Living Room',
-'Temperature Doenstairs' : 'Temperature Doenstairs - Living Room', 
+'Temperature Downstairs' : 'Temperature Doenstairs - Living Room', 
 'Temperature Upstairs' : 'Temperature Upstairs - Master Bedroom',
 'Weather 1' : 'Temperature - Frontdoor'
  }
