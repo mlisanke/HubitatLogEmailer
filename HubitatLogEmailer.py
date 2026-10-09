@@ -181,7 +181,7 @@ def main():
     elist = []
     enote = []
     eintrusion = None
-    ct = datetime.now().astimezone()
+    lt = ct = datetime.now().astimezone()
 #    offset = datetime.fromtimestamp(ct.timestamp()) - datetime.utcfromtimestamp(ct.timestamp())
     for e in r.content[2:-2].decode("utf-8").split('","'):
         edt,level,content = e.split('\\t')
@@ -246,7 +246,7 @@ def main():
             print(oline)
             outfile.write(oline+"\n")
 
-    lt = datetime.strptime(elist[-1][0],"%Y-%m-%d %H:%M:%S.%f")
+ #   lt = datetime.strptime(elist[-1][0],"%Y-%m-%d %H:%M:%S.%f")
     print(lt)
 
     with open(".hubitat-logtime","w") as outfile:
@@ -257,9 +257,9 @@ def main():
     cc = ['mike.lisanke+rpicc1@gmail.com','mike.lisanke+rpicc2@gmail.com']
     bcc = ['mike.lisanke+rpibcc1@gmail.com']
     if eintrusion:
-        subject = "Hubitat Past Logs at "+eintrusion
+        subject = "Hubitat Past Logs at "+eintrusion+" from: "+platform.node()
     else:
-        subject = "Hubitat Past Logs at "+lt.strftime("%c")
+        subject = "Hubitat Past Logs at "+lt.strftime("%c")+" from: "+platform.node()
 
     send_mail(fromaddr,[toaddr],subject,mtext,files=["hubitat.txt"],send_cc=cc,send_bcc=bcc,user=username,passwd=password)
 
