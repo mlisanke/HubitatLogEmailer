@@ -3,6 +3,7 @@
 #pdb.pm()
 import requests
 from datetime import datetime
+from datetime import timezone
 from datetime import timedelta
 import smtplib
 from os.path import basename
@@ -132,12 +133,12 @@ def main():
     print(r.headers)
 #   print(r.content)
 
-    t = datetime.now()
+    t = datetime.now().astimezone()
 
     if os.path.isfile(".hubitat-logtime"):
         with open(".hubitat-logtime","r") as infile:
             timestamp = infile.read()
-            pt = datetime.fromtimestamp(float(timestamp))
+            pt = datetime.fromtimestamp(float(timestamp)).astimezone()
     else:
         pt = t - timedelta(hours=12)
 
@@ -180,7 +181,7 @@ def main():
     elist = []
     enote = []
     eintrusion = None
-    ct = datetime.now()
+    ct = datetime.now().astimezone()
 #    offset = datetime.fromtimestamp(ct.timestamp()) - datetime.utcfromtimestamp(ct.timestamp())
     for e in r.content[2:-2].decode("utf-8").split('","'):
         edt,level,content = e.split('\\t')
@@ -188,8 +189,7 @@ def main():
         ehour,emin,esec = etime.split(":")
         etype,eid,ename,etext = content.split('|')
         edt = edt.lstrip("\\u0000")
-        lt = datetime.strptime(edt+"000","%Y-%m-%d %H:%M:%S.%f")
-#        lt = ut+offset
+        lt = datetime.strptime(edt+"000","%Y-%m-%d %H:%M:%S.%f").astimezone()
         if lt > pt:
             date = lt.strftime("%Y-%m-%d %H:%M:%S.%f")
             elist.append([date,level,etype,eid,ename,etext])
