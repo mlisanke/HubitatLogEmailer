@@ -199,7 +199,7 @@ def main():
                 if "Intrusion" in etext:
                     eintrusion = etext
             elif etype == 'dev':
-                dname = devs.get(ename,'Device not found')
+                dname = devs.get(ename,ename+' *Device not found*')
                 if etext.find('is open') != -1:
                     enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is open ('+etext+')')
                 if etext.find('was opened') != -1:
@@ -223,7 +223,11 @@ def main():
                         bpos = etext.find(' battery is') 
                         if bpos != -1:
                             if chklutime(ename,lt,300):
-                                enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[bpos:])    
+                                enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[bpos:])
+                        else:
+                            if chklutime(ename,lt,300):
+                                enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext)
+
 #    print(note,elist)
 
     mtext = ""
