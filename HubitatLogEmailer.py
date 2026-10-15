@@ -175,7 +175,8 @@ def main():
 'Smart Power 5892' : 'Repeater/Outlet Living Room',
 'Temperature Downstairs' : 'Temperature Downstairs - Living Room', 
 'Temperature Upstairs' : 'Temperature Upstairs - Master Bedroom',
-'Weather 1' : 'Temperature - Frontdoor'
+'Weather 1' : 'Temperature - Frontdoor',
+'Weather 2' : 'Temperature - Garage'
  }
 
     elist = []
