@@ -193,40 +193,42 @@ def main():
         lt = datetime.strptime(edt+"000","%Y-%m-%d %H:%M:%S.%f").astimezone()
         if lt > pt:
             date = lt.strftime("%Y-%m-%d %H:%M:%S.%f")
+            etext=etext.replace("\\u00b0"," deg.")
             elist.append([date,level,etype,eid,ename,etext])
             if etype == 'app' and eid == '1':
                 enote.append(lt.strftime("%m/%d %H:%M ")+etext)
                 if "Intrusion" in etext:
                     eintrusion = etext
-            elif etype == 'dev':
-                dname = devs.get(ename,ename+' *Device not found*')
-                if etext.find('is open') != -1:
-                    enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is open ('+etext+')')
-                if etext.find('was opened') != -1:
-                    enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is open ('+etext+')')
-                elif etext.find('is closed') != -1:
-                    enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is closed ('+etext+')')
-                elif etext.find('was closed') != -1:
-                    enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is closed ('+etext+')')
-                elif etext.find('is active') != -1:
-                    enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is active ('+etext+')')
-                elif etext.find('is inactive') != -1:
-                    enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is inactive ('+etext+')')
-                elif ename.find('Key Fob') != -1:
-                    enote.append(lt.strftime("%m/%d %H:%M ")+'('+etext+')')
-                else:
-                    tpos = etext.find(' temperature is')
-                    if tpos != -1:
-                        if chklutime(ename,lt,300):
-                            enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[tpos:].replace("\\u00b0"," deg."))
-                    else:
-                        bpos = etext.find(' battery is') 
-                        if bpos != -1:
-                            if chklutime(ename,lt,300):
-                                enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[bpos:])
-                        else:
-                            if chklutime(ename,lt,300):
-                                enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext)
+            enote.append(edate+' '+etime+' <room> '+ename+' '+etext)
+            # elif etype == 'dev':
+            #     dname = devs.get(ename,ename+' *Device not found*')
+            #     if etext.find('is open') != -1:
+            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is open ('+etext+')')
+            #     if etext.find('was opened') != -1:
+            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is open ('+etext+')')
+            #     elif etext.find('is closed') != -1:
+            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is closed ('+etext+')')
+            #     elif etext.find('was closed') != -1:
+            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is closed ('+etext+')')
+            #     elif etext.find('is active') != -1:
+            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is active ('+etext+')')
+            #     elif etext.find('is inactive') != -1:
+            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is inactive ('+etext+')')
+            #     elif ename.find('Key Fob') != -1:
+            #         enote.append(lt.strftime("%m/%d %H:%M ")+'('+etext+')')
+            #     else:
+            #         tpos = etext.find(' temperature is')
+            #         if tpos != -1:
+            #             if chklutime(ename,lt,300):
+            #                 enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[tpos:].replace("\\u00b0"," deg."))
+            #         else:
+            #             bpos = etext.find(' battery is') 
+            #             if bpos != -1:
+            #                 if chklutime(ename,lt,300):
+            #                     enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[bpos:])
+            #             else:
+            #                 if chklutime(ename,lt,300):
+            #                     enote.append(lt.strftime("%m/%d %H:%M ")+dname+' ('+etext+') *untracked-message')
 
 #    print(note,elist)
 
@@ -246,7 +248,7 @@ def main():
         mtext += "\n- Attached Hubitat Past Log File\n"
         for e in elist:
             date,level,etype,eid,ename,etext = e
-            etext=etext.replace("\\u00b0"," deg.")
+            # etext=etext.replace("\\u00b0"," deg.")
             oline = "{0} {1} {2} {3}\t{4} -\t{5}".format(date,level,etype,eid,ename,etext)
             print(oline)
             outfile.write(oline+"\n")

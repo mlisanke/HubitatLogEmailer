@@ -1,0 +1,5 @@
+.hubitat-*
+hubitat.txt
+PHubitatLogEmailer.py
+WhatsMyHostName.py
+WhatsMyIP.py
