@@ -15,7 +15,8 @@ import os.path
 import pickle
 import platform
 import sys
-import string
+import json
+# import string
 
 def PickleDump(ip,cookies,username,password):
     with open(".hubitat-env","wb") as outfile:
@@ -119,6 +120,26 @@ def chklutime(name,time,mindiff):
         return True
     return False
 
+def mapDevice2RoomName(id):
+    devmap = None
+    
+    if devmap is None:
+        try:
+            with open(".hubitat-devmap") as f:
+                devmap = json.load(f)
+        except Exception:
+            devmap = {}
+
+    device = devmap.get(id)
+    if device:
+        if device['room'] is None:
+            return("House - "+device['name'])
+        else:
+            return(device['room']+' - '+device['name'])
+    else:
+        return('House - Unknown')
+
+
 def main():
     print("Hubitat Log Emailer")
 
@@ -131,7 +152,6 @@ def main():
 
     print(r.status_code)
     print(r.headers)
-#   print(r.content)
 
     t = datetime.now().astimezone()
 
@@ -144,46 +164,10 @@ def main():
 
     print(pt,t)
 
-    devs = { 'Weather 1':'Back side of house',
-'Contact Sensor 1':'Family room door contact',
-'Contact Sensor 2':'Living room door contact',
-'Garage Door Tilt Sensor':'Garage Door Tilt Sensor',
-'IR Motion 1':'Family room - Inside Door motion',
-'IR Motion 2':'Garage door (defunked) motion',
-'IR Motion 3':'Living room - Front door motion',
-'IR Motion 4':'Living room - North window motion',
-'IR Motion 5':'Kitchen near cupboard (defunked) motion',
-'IR Motion 6':'Family room - Stairs motion',
-'IR Motion 7':'Garage door motion',
-'IR Motion 8':'Kitchen - Cupboard motion',
-'IR Motion 9':'2nd Floor - Hallway near Den',
-'IR Motion 10':'Living room near Front door',
-'Key Fob 1':'backup fob',
-'Key Fob 2':'primary fob',
-'Outlet 1':'Living room near North window outlet',
-'Siren 1':'Bookshelf near stairs siren',
-'Siren 2':'Kitchen above cupboard siren',
-'Siren 3':'Living room above Grandfather clock siren',
-'Siren 4':'Office bookshelf near hall siren',
-'Siren 5':'Garage siren',
-'Siren 6':'Kitchen siren',
-'Smoke/CO Detector 1':'Family room shelf near recliner smoke/CO',
-'Smoke/CO Detector 2':'Upstairs hall near primary smoke alarm smoke/CO',
-'Motion Light Temp Humidity 1':'Front porch motion',
-'Motion Light Temp Humidity 2':'Back porch motion',
-'Smart Power 29EE' : 'Repeater/Outlet Upstairs Hallway',
-'Smart Power 5892' : 'Repeater/Outlet Living Room',
-'Temperature Downstairs' : 'Temperature Downstairs - Living Room', 
-'Temperature Upstairs' : 'Temperature Upstairs - Master Bedroom',
-'Weather 1' : 'Temperature - Frontdoor',
-'Weather 2' : 'Temperature - Garage'
- }
-
     elist = []
     enote = []
     eintrusion = None
     lt = ct = datetime.now().astimezone()
-#    offset = datetime.fromtimestamp(ct.timestamp()) - datetime.utcfromtimestamp(ct.timestamp())
     for e in r.content[2:-2].decode("utf-8").split('","'):
         edt,level,content = e.split('\\t')
         edate, etime = edt.split()
@@ -195,43 +179,15 @@ def main():
             date = lt.strftime("%Y-%m-%d %H:%M:%S.%f")
             etext=etext.replace("\\u00b0"," deg.")
             elist.append([date,level,etype,eid,ename,etext])
-            if etype == 'app' and eid == '1':
-                enote.append(lt.strftime("%m/%d %H:%M ")+etext)
-                if "Intrusion" in etext:
+            if etype == 'app': 
+                enote.append(edate+' '+etime+' (APP - '+eid+') - '+etext)
+                if eid == '1' and "Intrusion" in etext:
                     eintrusion = etext
-            enote.append(edate+' '+etime+' <room> '+ename+' '+etext)
-            # elif etype == 'dev':
-            #     dname = devs.get(ename,ename+' *Device not found*')
-            #     if etext.find('is open') != -1:
-            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is open ('+etext+')')
-            #     if etext.find('was opened') != -1:
-            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is open ('+etext+')')
-            #     elif etext.find('is closed') != -1:
-            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is closed ('+etext+')')
-            #     elif etext.find('was closed') != -1:
-            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is closed ('+etext+')')
-            #     elif etext.find('is active') != -1:
-            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is active ('+etext+')')
-            #     elif etext.find('is inactive') != -1:
-            #         enote.append(lt.strftime("%m/%d %H:%M ")+dname+' is inactive ('+etext+')')
-            #     elif ename.find('Key Fob') != -1:
-            #         enote.append(lt.strftime("%m/%d %H:%M ")+'('+etext+')')
-            #     else:
-            #         tpos = etext.find(' temperature is')
-            #         if tpos != -1:
-            #             if chklutime(ename,lt,300):
-            #                 enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[tpos:].replace("\\u00b0"," deg."))
-            #         else:
-            #             bpos = etext.find(' battery is') 
-            #             if bpos != -1:
-            #                 if chklutime(ename,lt,300):
-            #                     enote.append(lt.strftime("%m/%d %H:%M ")+dname+etext[bpos:])
-            #             else:
-            #                 if chklutime(ename,lt,300):
-            #                     enote.append(lt.strftime("%m/%d %H:%M ")+dname+' ('+etext+') *untracked-message')
-
-#    print(note,elist)
-
+            elif etype == 'dev':
+                enote.append(edate+' '+etime+' ('+mapDevice2RoomName(eid)+') - '+etext)
+            else:
+                enote.append(edate+' '+etime+' '+ename+' '+etext)
+            
     mtext = ""
     lline = ""
     with open("hubitat.txt","w") as outfile:
@@ -248,12 +204,10 @@ def main():
         mtext += "\n- Attached Hubitat Past Log File\n"
         for e in elist:
             date,level,etype,eid,ename,etext = e
-            # etext=etext.replace("\\u00b0"," deg.")
             oline = "{0} {1} {2} {3}\t{4} -\t{5}".format(date,level,etype,eid,ename,etext)
             print(oline)
             outfile.write(oline+"\n")
 
- #   lt = datetime.strptime(elist[-1][0],"%Y-%m-%d %H:%M:%S.%f")
     print(lt)
 
     with open(".hubitat-logtime","w") as outfile:
