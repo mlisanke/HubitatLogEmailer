@@ -11,73 +11,10 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
-import os.path
-import pickle
+import os
 import platform
 import sys
 import json
-# import string
-
-def PickleDump(ip,cookies,username,password):
-    with open(".hubitat-env","wb") as outfile:
-        pickle.dump(ip,outfile)
-        pickle.dump(cookies,outfile)
-        pickle.dump(username,outfile)
-        pickle.dump(password,outfile)
-
-def PickleLoad():
-    if os.path.isfile(".hubitat-env"):
-        with open(".hubitat-env","rb") as infile:
-            ip = pickle.load(infile)
-            cookies = pickle.load(infile)
-            username = pickle.load(infile)
-            password = pickle.load(infile)
-    else:
-        ip = input("Hubitat IP address:")
-        hkey = input("Hubitat Key Name:")
-        hvalue = input("Hubitat Key Value:")
-        cookies = {hkey:hvalue}
-        username = input("Gmail userame:")
-        password = input("Gmail password:")
-    return (ip,cookies,username,password)
-
-def PickleLoadNewPassword():
-    if os.path.isfile(".hubitat-env"):
-        with open(".hubitat-env","rb") as infile:
-            ip = pickle.load(infile)
-            cookies = pickle.load(infile)
-            username = pickle.load(infile)
-            password = pickle.load(infile)
-            hkey = list(cookies)[0]
-            password = input("new GMail password:")
-            PickleDump(ip,cookies,username,password)
-    else:
-        ip = input("Hubitat IP address:")
-        hkey = input("Hubitat Key Name:")
-        hvalue = input("Hubitat Key Value:")
-        cookies = {hkey:hvalue}
-        username = input("Gmail userame:")
-        password = input("Gmail password:")
-    return (ip,cookies,username,password)
-
-def PickleLoadNewKey():
-    if os.path.isfile(".hubitat-env"):
-        with open(".hubitat-env","rb") as infile:
-            ip = pickle.load(infile)
-            cookies = pickle.load(infile)
-            username = pickle.load(infile)
-            password = pickle.load(infile)
-            hkey = list(cookies)[0]
-            cookies[hkey] = input("new Hubitat Key Value:")
-            PickleDump(ip,cookies,username,password)
-    else:
-        ip = input("Hubitat IP address:")
-        hkey = input("Hubitat Key Name:")
-        hvalue = input("Hubitat Key Value:")
-        cookies = {hkey:hvalue}
-        username = input("Gmail userame:")
-        password = input("Gmail password:")
-    return (ip,cookies,username,password)
 
 #version 3 works!
 def send_mail(send_from, send_to, subject, text, files=None, send_cc=None, send_bcc=None, user=None, passwd=None):
@@ -109,17 +46,6 @@ def send_mail(send_from, send_to, subject, text, files=None, send_cc=None, send_
     server.sendmail(send_from, send_to, msg.as_string())
     server.quit()
     
-alut = {}    
-def chklutime(name,time,mindiff): 
-    if name not in alut:
-        alut[name] = time
-        return True
-    ludiff = time-alut[name]
-    if ludiff.total_seconds() > mindiff:
-        alut[name] = time
-        return True
-    return False
-
 def mapDevice2RoomName(id):
     devmap = None
     
@@ -139,11 +65,14 @@ def mapDevice2RoomName(id):
     else:
         return('House - Unknown')
 
-
 def main():
     print("Hubitat Log Emailer")
 
-    (ip,cookies,username,password) = PickleLoad()
+    session = os.getenv("HUBITAT_SESSION_COOKIE")
+    ip = os.getenv("HUBITAT_IP")
+    cookies=({"HUBSESSION":session})
+    username = os.getenv("MAILADDR")
+    password = os.getenv("MAILPSW")
     print(ip,cookies,username,password)
     url = "http://"+ip+"/logs/past/json"
     print(url)
@@ -170,23 +99,27 @@ def main():
     lt = ct = datetime.now().astimezone()
     for e in r.content[2:-2].decode("utf-8").split('","'):
         edt,level,content = e.split('\\t')
-        edate, etime = edt.split()
-        ehour,emin,esec = etime.split(":")
+        # edate, etime = edt.split()
+        # ehour,emin,esec = etime.split(":")
         etype,eid,ename,etext = content.split('|')
         edt = edt.lstrip("\\u0000")
         lt = datetime.strptime(edt+"000","%Y-%m-%d %H:%M:%S.%f").astimezone()
         if lt > pt:
-            date = lt.strftime("%Y-%m-%d %H:%M:%S.%f")
+            # date = lt.strftime("%Y-%m-%d %H:%M:%S.%f")
             etext=etext.replace("\\u00b0"," deg.")
-            elist.append([date,level,etype,eid,ename,etext])
+            elist.append([edt,level,etype,eid,ename,etext])
             if etype == 'app': 
-                enote.append(edate+' '+etime+' (APP - '+eid+') - '+etext)
+                source = ' App:'+eid.zfill(3)+' - '
+                # source = source.ljust(32)+' - '
+                enote.append(edt+source+etext)
                 if eid == '1' and "Intrusion" in etext:
                     eintrusion = etext
             elif etype == 'dev':
-                enote.append(edate+' '+etime+' ('+mapDevice2RoomName(eid)+') - '+etext)
+                source = ' Dev:'+eid.zfill(3)+' '+mapDevice2RoomName(eid)+' - '
+                # source = source.ljust(64)+' - '
+                enote.append(edt+source+etext)
             else:
-                enote.append(edate+' '+etime+' '+ename+' '+etext)
+                enote.append(edt+' '+ename.ljust(64)+' - '+etext)
             
     mtext = ""
     lline = ""
@@ -204,7 +137,7 @@ def main():
         mtext += "\n- Attached Hubitat Past Log File\n"
         for e in elist:
             date,level,etype,eid,ename,etext = e
-            oline = "{0} {1} {2} {3}\t{4} -\t{5}".format(date,level,etype,eid,ename,etext)
+            oline = "{0} {1} {2} {3} {4} - {5}".format(date,level,etype,eid,ename,etext)
             print(oline)
             outfile.write(oline+"\n")
 
@@ -225,9 +158,4 @@ def main():
     send_mail(fromaddr,[toaddr],subject,mtext,files=["hubitat.txt"],send_cc=cc,send_bcc=bcc,user=username,passwd=password)
 
 if __name__=="__main__":
-        if len(sys.argv) > 1:
-            if "newkey" == sys.argv[1]:
-                PickleLoadNewKey()
-            elif "newpsw" == sys.argv[1]:
-                PickleLoadNewPassword()
         main()
